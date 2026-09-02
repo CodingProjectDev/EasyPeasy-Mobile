@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,9 +13,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import { colors } from '@/constants/easypeasy-theme';
+import { useCart } from '@/context/cart-context';
 import { supabase } from '@/lib/supabase';
 import {
   Product,
@@ -50,7 +57,18 @@ function ProductCard({
     getDiscountPercent(product);
 
   return (
-    <Pressable style={styles.card}>
+    <Pressable
+      style={styles.card}
+      onPress={() =>
+        router.push({
+          pathname:
+            '/product/[id]',
+          params: {
+            id: product.id,
+          },
+        })
+      }
+    >
       <View style={styles.imageWrap}>
         {image ? (
           <Image
@@ -68,16 +86,13 @@ function ProductCard({
           </View>
         )}
 
-        <Pressable
-          style={styles.heart}
-          hitSlop={8}
-        >
+        <View style={styles.heart}>
           <Ionicons
             name="heart-outline"
             size={19}
             color={colors.text}
           />
-        </Pressable>
+        </View>
 
         {product.inventory < 1 ? (
           <View style={styles.soldBadge}>
@@ -146,6 +161,10 @@ function ProductCard({
 export default function ShopScreen() {
   const { width } =
     useWindowDimensions();
+
+  const {
+    cartCount,
+  } = useCart();
 
   const columns =
     width >= 1000
@@ -320,13 +339,64 @@ export default function ShopScreen() {
         }
         ListHeaderComponent={
           <View>
-            <Text style={styles.eyebrow}>
-              THE RACK
-            </Text>
+            <View
+              style={
+                styles.shopHeading
+              }
+            >
+              <View
+                style={{
+                  flex: 1,
+                }}
+              >
+                <Text style={styles.eyebrow}>
+                  THE RACK
+                </Text>
 
-            <Text style={styles.title}>
-              Shop all finds.
-            </Text>
+                <Text style={styles.title}>
+                  Shop all finds.
+                </Text>
+              </View>
+
+              <Pressable
+                style={
+                  styles.cartButton
+                }
+                onPress={() =>
+                  router.push(
+                    '/cart',
+                  )
+                }
+              >
+                <Ionicons
+                  name="bag-outline"
+                  size={22}
+                  color={
+                    colors.text
+                  }
+                />
+
+                {cartCount >
+                  0 && (
+                  <View
+                    style={
+                      styles.cartBadge
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.cartBadgeText
+                      }
+                    >
+                      {cartCount >
+                      99
+                        ? '99+'
+                        : cartCount}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            </View>
 
             <Text style={styles.subtitle}>
               New, pre-loved and one-of-one pieces from EasyPeasy.
@@ -487,6 +557,48 @@ const styles =
       paddingHorizontal: 14,
       paddingTop: 18,
       paddingBottom: 32,
+    },
+
+    shopHeading: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent:
+        'space-between',
+      gap: 12,
+    },
+
+    cartButton: {
+      position: 'relative',
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor:
+        colors.card,
+      borderWidth: 1,
+      borderColor:
+        colors.line,
+    },
+
+    cartBadge: {
+      position: 'absolute',
+      top: -5,
+      right: -5,
+      minWidth: 19,
+      height: 19,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor:
+        colors.green,
+      paddingHorizontal: 4,
+    },
+
+    cartBadgeText: {
+      color: '#FFFFFF',
+      fontSize: 9,
+      fontWeight: '900',
     },
 
     eyebrow: {
