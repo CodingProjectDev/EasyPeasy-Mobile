@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 
 import type { Product } from '@/types/product';
+import { updateProductNotification } from '@/lib/store-api';
 
 const CART_KEY = 'easypeasy_mobile_cart_v1';
 
@@ -174,6 +175,7 @@ export function CartProvider({
             ];
           },
         );
+        void updateProductNotification(product.id, 'cart', 'schedule');
       },
       [],
     );
@@ -184,6 +186,9 @@ export function CartProvider({
         productId: string,
         quantity: number,
       ) => {
+        if (quantity <= 0) {
+          void updateProductNotification(productId, 'cart', 'cancel');
+        }
         setItems(
           (current) =>
             current
@@ -230,6 +235,7 @@ export function CartProvider({
       (
         productId: string,
       ) => {
+        void updateProductNotification(productId, 'cart', 'cancel');
         setItems(
           (current) =>
             current.filter(
@@ -245,9 +251,12 @@ export function CartProvider({
   const clearCart =
     useCallback(
       () => {
+        items.forEach((item) => {
+          void updateProductNotification(item.product.id, 'cart', 'cancel');
+        });
         setItems([]);
       },
-      [],
+      [items],
     );
 
   const cartCount =

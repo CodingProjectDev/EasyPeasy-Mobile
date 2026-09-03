@@ -6,6 +6,7 @@ import {
 import {
   ActivityIndicator,
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +24,8 @@ import {
 
 import { colors } from '@/constants/easypeasy-theme';
 import { useCart } from '@/context/cart-context';
+import { useCatalog } from '@/context/catalog-context';
+import { ProductCard } from '@/components/product-card';
 import { supabase } from '@/lib/supabase';
 import {
   Product,
@@ -73,6 +76,14 @@ export default function ProductDetailsScreen() {
     addToCart,
     cartCount,
   } = useCart();
+
+  const {
+    products,
+    recent,
+    recordRecent,
+    toggleWishlist,
+    isWishlisted,
+  } = useCatalog();
 
   const [
     product,
@@ -161,6 +172,7 @@ export default function ProductDetailsScreen() {
           data,
         ),
       );
+      recordRecent(String(data.id));
 
       setLoading(false);
     }
@@ -171,7 +183,7 @@ export default function ProductDetailsScreen() {
       mounted =
         false;
     };
-  }, [productId]);
+  }, [productId, recordRecent]);
 
   const discount =
     useMemo(
@@ -279,6 +291,15 @@ export default function ProductDetailsScreen() {
     product.inventory <
     1;
 
+  const related = products
+    .filter((item) => item.id !== product.id && item.category === product.category)
+    .slice(0, 6);
+
+  const recentlyViewed = recent
+    .filter((id) => id !== product.id)
+    .map((id) => products.find((item) => item.id === id))
+    .filter(Boolean) as Product[];
+
   return (
     <SafeAreaView
       style={styles.safe}
@@ -316,6 +337,17 @@ export default function ProductDetailsScreen() {
         >
           Product details
         </Text>
+
+        <Pressable
+          style={styles.iconButton}
+          onPress={() => toggleWishlist(product.id)}
+        >
+          <Ionicons
+            name={isWishlisted(product.id) ? 'heart' : 'heart-outline'}
+            size={22}
+            color={isWishlisted(product.id) ? colors.danger : colors.text}
+          />
+        </Pressable>
 
         <Pressable
           style={
@@ -530,6 +562,18 @@ export default function ProductDetailsScreen() {
             )}
           </View>
 
+          {Object.keys(product.measurements).length > 0 && (
+            <View style={styles.description}>
+              <Text style={styles.sectionTitle}>Measurements</Text>
+              {Object.entries(product.measurements).map(([label, value]) => (
+                <View style={styles.measurementRow} key={label}>
+                  <Text style={styles.measurementLabel}>{label}</Text>
+                  <Text style={styles.measurementValue}>{value}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
           {!!product.brand && (
             <Text
               style={
@@ -723,6 +767,30 @@ export default function ProductDetailsScreen() {
             </View>
           </View>
 
+          <Pressable
+            disabled={soldOut}
+            style={[styles.buyNowButton, soldOut && styles.addButtonDisabled]}
+            onPress={() =>
+              router.push({
+                pathname: '/checkout',
+                params: { productId: product.id },
+              })
+            }
+          >
+            <Text style={styles.buyNowText}>Checkout now</Text>
+            <Ionicons name="arrow-forward" size={18} color={colors.darkGreen} />
+          </Pressable>
+
+          {!!product.tiktokUrl && (
+            <Pressable
+              style={styles.videoButton}
+              onPress={() => void Linking.openURL(product.tiktokUrl!)}
+            >
+              <Ionicons name="logo-tiktok" size={18} color={colors.text} />
+              <Text style={styles.videoButtonText}>Watch product video</Text>
+            </Pressable>
+          )}
+
           {!!product.description && (
             <View
               style={
@@ -747,6 +815,24 @@ export default function ProductDetailsScreen() {
             </View>
           )}
         </View>
+
+        {!!related.length && (
+          <View style={styles.productRailSection}>
+            <Text style={styles.railTitle}>Related finds</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.productRail}>
+              {related.map((item) => <ProductCard key={item.id} product={item} width={180} />)}
+            </ScrollView>
+          </View>
+        )}
+
+        {!!recentlyViewed.length && (
+          <View style={styles.productRailSection}>
+            <Text style={styles.railTitle}>Recently viewed</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.productRail}>
+              {recentlyViewed.map((item) => <ProductCard key={item.id} product={item} width={180} />)}
+            </ScrollView>
+          </View>
+        )}
       </ScrollView>
 
       <View
@@ -873,6 +959,55 @@ const styles =
       borderColor:
         colors.line,
     },
+
+    measurementRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 16,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.line,
+    },
+
+    measurementLabel: { flex: 1, color: colors.muted, textTransform: 'capitalize' },
+
+    measurementValue: { color: colors.text, fontWeight: '800', textAlign: 'right' },
+
+    buyNowButton: {
+      marginTop: 14,
+      minHeight: 50,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.green,
+      backgroundColor: colors.softGreen,
+    },
+
+    buyNowText: { color: colors.darkGreen, fontWeight: '900' },
+
+    videoButton: {
+      marginTop: 10,
+      minHeight: 46,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      borderRadius: 14,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.line,
+    },
+
+    videoButtonText: { color: colors.text, fontWeight: '800' },
+
+    productRailSection: { marginTop: 24 },
+
+    railTitle: { paddingHorizontal: 18, marginBottom: 12, color: colors.text, fontSize: 21, fontWeight: '900' },
+
+    productRail: { paddingHorizontal: 18, gap: 12 },
 
     cartBadge: {
       position: 'absolute',

@@ -8,7 +8,9 @@ export type Product = {
   size: string;
   condition: string;
   brand: string;
+  measurements: Record<string, string>;
   description: string;
+  tiktokUrl?: string;
   images: string[];
   inventory: number;
   oneOfOne?: boolean;
@@ -34,7 +36,17 @@ export function productFromRow(row: any): Product {
     size: String(row.size || ''),
     condition: String(row.condition || ''),
     brand: String(row.brand || ''),
+    measurements:
+      row.measurements && typeof row.measurements === 'object'
+        ? Object.fromEntries(
+            Object.entries(row.measurements).map(([key, value]) => [
+              key,
+              String(value),
+            ]),
+          )
+        : {},
     description: String(row.description || ''),
+    tiktokUrl: row.tiktok_url ? String(row.tiktok_url) : undefined,
     images: Array.isArray(row.images)
       ? row.images.map(String)
       : [],

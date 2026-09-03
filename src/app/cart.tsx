@@ -420,18 +420,18 @@ export default function CartScreen() {
                 styles.shippingNote
               }
             >
-              Shipping and final order total will be calculated when mobile checkout is connected.
+              Shipping is calculated from each product. Any location-based fee is confirmed separately and paid on delivery.
             </Text>
 
             <Pressable
               style={
                 styles.checkoutButton
               }
-              onPress={() => {
-                alert(
-                  'Mobile checkout is the next feature. Your cart is saved.',
-                );
-              }}
+              onPress={() =>
+                router.push(
+                  '/checkout',
+                )
+              }
             >
               <Text
                 style={
